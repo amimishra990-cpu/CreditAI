@@ -1,0 +1,124 @@
+.alert-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    animation: slideUp 0.4s ease forwards;
+    border-left: 3px solid transparent;
+}
+
+.alert-card--green {
+    border-left-color: var(--color-success);
+}
+
+.alert-card--gold {
+    border-left-color: var(--color-warning);
+}
+
+.alert-card--red {
+    border-left-color: var(--color-danger);
+}
+
+.alert-card--ack {
+    opacity: 0.55;
+}
+
+.alert-card__icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.alert-card--green .alert-card__icon-wrap {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.alert-card--gold .alert-card__icon-wrap {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.alert-card--red .alert-card__icon-wrap {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.alert-card__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.alert-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xs);
+}
+
+.alert-card__title {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.alert-card__severity {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    letter-spacing: 0.05em;
+}
+
+.alert-card__severity--green {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.alert-card__severity--gold {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.alert-card__severity--red {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.alert-card__desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin-bottom: var(--space-sm);
+}
+
+.alert-card__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.alert-card__action {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.alert-card__action:hover {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
