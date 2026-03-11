@@ -13,17 +13,21 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  UserPlus,
+  FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ShinyText from "@/components/ui/ShinyText";
 
 const navItems = [
+  { name: "Onboarding", href: "/onboarding", icon: UserPlus },
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Data Ingestion", href: "/data-ingestion", icon: Database },
   { name: "Agent Analysis", href: "/agent-analysis", icon: BrainCircuit },
   { name: "Orchestrator", href: "/orchestrator", icon: Workflow },
   { name: "Early Warning", href: "/early-warning", icon: AlertTriangle },
+  { name: "Credit Report", href: "/report", icon: FileText },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -45,7 +49,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-center w-full mb-10 px-4">
           <div className="flex items-center gap-3">
             <div className="bg-brand/20 p-2 rounded-xl flex items-center justify-center border border-brand/50 shadow-[0_0_15px_rgba(22,58,92,0.5)]">
-               <ShieldAlert className="text-brand w-6 h-6" />
+              <ShieldAlert className="text-brand w-6 h-6" />
             </div>
             {!collapsed && (
               <motion.div
@@ -82,7 +86,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 )}
-                
+
                 <item.icon
                   className={cn(
                     "w-5 h-5 shrink-0 relative z-10 transition-colors",
@@ -92,7 +96,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
 
                 <motion.span
                   initial={false}
-                  animate={{ 
+                  animate={{
                     opacity: collapsed ? 0 : 1,
                     display: collapsed ? "none" : "block",
                     marginLeft: collapsed ? 0 : "12px"
@@ -102,13 +106,13 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                 >
                   {item.name}
                 </motion.span>
-                
+
                 {isActive && !collapsed && (
-                   <motion.div 
-                     initial={{ opacity: 0, scale: 0 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     className="absolute right-3 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] z-10"
-                   />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute right-3 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] z-10"
+                  />
                 )}
               </Link>
             );
@@ -128,7 +132,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
         {/* Glow effect in background */}
         <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand/10 blur-[120px] pointer-events-none" />
         <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-brand/5 blur-[100px] pointer-events-none" />
-        
+
         {children}
       </main>
     </div>
