@@ -3,11 +3,10 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { ai, MODEL } from "../gemini.js";
-import { workspaces } from "./onboard.js";
+import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
 
-// Multer storage config
 const storage = multer.diskStorage({
     destination: (_req, _file, cb) => {
         const dir = path.join(process.cwd(), "uploads");
@@ -15,22 +14,18 @@ const storage = multer.diskStorage({
         cb(null, dir);
     },
     filename: (_req, file, cb) => {
-        const uniqueName = `${Date.now()}-${file.originalname}`;
-        cb(null, uniqueName);
+        cb(null, `${Date.now()}-${file.originalname}`);
     },
 });
 
 const upload = multer({
     storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    limits: { fileSize: 50 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
         const allowed = [".pdf", ".png", ".jpg", ".jpeg", ".xlsx", ".xls", ".csv", ".doc", ".docx"];
         const ext = path.extname(file.originalname).toLowerCase();
-        if (allowed.includes(ext)) {
-            cb(null, true);
-        } else {
-            cb(new Error(`File type ${ext} not supported`));
-        }
+        if (allowed.includes(ext)) cb(null, true);
+        else cb(new Error(`File type ${ext} not supported`));
     },
 });
 
@@ -52,14 +47,9 @@ router.post("/upload", upload.array("files", 10), async (req: Request, res: Resp
             let confidence = 0;
 
             try {
-                const filePath = file.path;
-                const mimeType = file.mimetype;
-
-                // Read the file as base64
-                const fileBuffer = fs.readFileSync(filePath);
+                const fileBuffer = fs.readFileSync(file.path);
                 const base64Data = fileBuffer.toString("base64");
 
-                // Use Gemini Vision for OCR + classification
                 const response = await ai.models.generateContent({
                     model: MODEL,
                     contents: [
@@ -68,26 +58,20 @@ router.post("/upload", upload.array("files", 10), async (req: Request, res: Resp
                             parts: [
                                 {
                                     inlineData: {
-                                        mimeType: mimeType || "application/pdf",
+                                        mimeType: file.mimetype || "application/pdf",
                                         data: base64Data,
                                     },
                                 },
                                 {
                                     text: `You are a financial document analysis AI. Analyze this document and provide:
-1. EXTRACTED_TEXT: Extract ALL text content from this document. Be thorough and include every piece of text, numbers, tables, and data visible.
-2. CLASSIFICATION: Classify this document into one of these categories:
-   - "Annual Report" (Balance Sheet, P&L, Cashflow statements)
-   - "ALM" (Asset Liability Management)
-   - "Shareholding Pattern"
-   - "Borrowing Profile"
-   - "GST Returns"
-   - "Bank Statement"
-   - "Portfolio Performance"
-   - "Legal Document"
-   - "Other Financial Document"
+1. EXTRACTED_TEXT: Extract ALL text content from this document.
+2. CLASSIFICATION: Classify this document:
+   - "Annual Report", "ALM", "Shareholding Pattern", "Borrowing Profile",
+   - "GST Returns", "Bank Statement", "Portfolio Performance",
+   - "Legal Document", "Other Financial Document"
 3. CONFIDENCE: Your confidence in the classification (0-100)
 
-Respond in this exact JSON format:
+Respond ONLY in this JSON format:
 {
   "extractedText": "...",
   "classification": "...",
@@ -100,8 +84,6 @@ Respond in this exact JSON format:
                 });
 
                 const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-                // Parse JSON from response
                 const jsonMatch = text.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     try {
@@ -135,17 +117,16 @@ Respond in this exact JSON format:
 
             results.push(docResult);
 
-            // Store in workspace if provided
-            if (workspaceId && workspaces[workspaceId]) {
-                workspaces[workspaceId].documents.push(docResult);
+            // Persist documents to MongoDB
+            if (workspaceId) {
+                await Workspace.findOneAndUpdate(
+                    { id: workspaceId },
+                    { $push: { documents: docResult } }
+                );
             }
         }
 
-        res.json({
-            success: true,
-            count: results.length,
-            documents: results,
-        });
+        res.json({ success: true, count: results.length, documents: results });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

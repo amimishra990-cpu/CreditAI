@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { ai, MODEL } from "../gemini.js";
-import { workspaces } from "./onboard.js";
+import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
 
@@ -11,9 +11,12 @@ router.post("/early-warning", async (req: Request, res: Response) => {
         let data = financialData || {};
         let company = companyInfo || {};
 
-        if (workspaceId && workspaces[workspaceId]) {
-            data = workspaces[workspaceId].extractedData || data;
-            company = workspaces[workspaceId].company || company;
+        if (workspaceId) {
+            const ws = await Workspace.findOne({ id: workspaceId });
+            if (ws) {
+                data = ws.extractedData || data;
+                company = ws.company || company;
+            }
         }
 
         const response = await ai.models.generateContent({
@@ -23,20 +26,14 @@ router.post("/early-warning", async (req: Request, res: Response) => {
                     role: "user",
                     parts: [
                         {
-                            text: `You are an Early Warning Risk Detection system for a bank. Continuously monitor and identify emerging risk signals for the following company.
+                            text: `You are an Early Warning Risk Detection system for a bank.
 
 COMPANY: ${JSON.stringify(company, null, 2)}
 FINANCIAL DATA: ${JSON.stringify(data, null, 2)}
 
-Scan for these types of risks:
-1. Sudden revenue drops or financial deterioration
-2. Negative news or media coverage
-3. Legal disputes or litigation
-4. Unusual financial patterns or anomalies
-5. Market or industry-level threats
-6. Regulatory compliance issues
+Scan for: sudden revenue drops, negative news, legal disputes, financial anomalies, market threats, regulatory issues.
 
-Generate realistic early warning alerts. Respond ONLY in this exact JSON format:
+Respond ONLY in this JSON format:
 {
   "alerts": [
     {
@@ -64,22 +61,18 @@ Generate realistic early warning alerts. Respond ONLY in this exact JSON format:
 
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-            try {
-                result = JSON.parse(jsonMatch[0]);
-            } catch {
-                result = { alerts: [], summary: text };
-            }
+            try { result = JSON.parse(jsonMatch[0]); }
+            catch { result = { alerts: [], summary: text }; }
         }
 
-        // Store in workspace
-        if (workspaceId && workspaces[workspaceId]) {
-            workspaces[workspaceId].earlyWarningAlerts = result.alerts || [];
+        if (workspaceId) {
+            await Workspace.findOneAndUpdate(
+                { id: workspaceId },
+                { $set: { earlyWarningAlerts: result.alerts || [] } }
+            );
         }
 
-        res.json({
-            success: true,
-            ...result,
-        });
+        res.json({ success: true, ...result });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

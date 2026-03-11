@@ -36,7 +36,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   // Hide the sidebar completely on the root landing page
-  if (pathname === "/") return <>{children}</>;
+  if (pathname === "/" || pathname === "/onboarding") return <>{children}</>;
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden relative">

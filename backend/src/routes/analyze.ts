@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { ai, MODEL } from "../gemini.js";
-import { workspaces } from "./onboard.js";
+import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
 
@@ -13,11 +13,8 @@ async function runAgent(agentName: string, prompt: string): Promise<any> {
         const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-            try {
-                return { agent: agentName, status: "complete", data: JSON.parse(jsonMatch[0]) };
-            } catch {
-                return { agent: agentName, status: "complete", data: { summary: text } };
-            }
+            try { return { agent: agentName, status: "complete", data: JSON.parse(jsonMatch[0]) }; }
+            catch { return { agent: agentName, status: "complete", data: { summary: text } }; }
         }
         return { agent: agentName, status: "complete", data: { summary: text } };
     } catch (err: any) {
@@ -32,129 +29,54 @@ router.post("/analyze", async (req: Request, res: Response) => {
         let data = extractedData || {};
         let company = companyInfo || {};
 
-        if (workspaceId && workspaces[workspaceId]) {
-            data = workspaces[workspaceId].extractedData || data;
-            company = workspaces[workspaceId].company || company;
+        if (workspaceId) {
+            const ws = await Workspace.findOne({ id: workspaceId });
+            if (ws) {
+                data = ws.extractedData || data;
+                company = ws.company || company;
+            }
         }
 
         const dataStr = JSON.stringify(data, null, 2);
         const companyStr = JSON.stringify(company, null, 2);
 
-        // Run all 4 agents in parallel
         const [docAnalysis, finAnalysis, researchAnalysis, promoterAnalysis] = await Promise.all([
-            // 1. Document Analysis Tool
-            runAgent("Document Analysis", `You are a Document Analysis AI for credit appraisal. Analyze the following extracted financial data and provide key findings.
-
+            runAgent("Document Analysis", `You are a Document Analysis AI. Analyze the extracted financial data.
 Company: ${companyStr}
 Extracted Data: ${dataStr}
+Respond in JSON: { "keyValues": [{ "entity": "...", "value": "...", "confidence": 0.95 }], "keyFindings": ["..."], "documentQuality": "good/fair/poor", "completeness": 0.85, "summary": "..." }`),
 
-Respond in this JSON format:
-{
-  "keyValues": [
-    { "entity": "field name", "value": "extracted value", "confidence": 0.95 }
-  ],
-  "keyFindings": ["finding 1", "finding 2"],
-  "documentQuality": "good/fair/poor",
-  "completeness": 0.85,
-  "summary": "brief summary"
-}`),
-
-            // 2. Financial Analysis Tool
-            runAgent("Financial Analysis", `You are a Financial Analysis AI for credit appraisal. Evaluate the company's financial health from the data below.
-
+            runAgent("Financial Analysis", `You are a Financial Analysis AI. Evaluate financial health.
 Company: ${companyStr}
 Financial Data: ${dataStr}
+Respond in JSON: { "ratios": [{ "name": "...", "value": 0.0, "benchmark": 0.0, "status": "good/warning/critical" }], "profitability": { "score": 0, "assessment": "..." }, "liquidity": { "score": 0, "assessment": "..." }, "solvency": { "score": 0, "assessment": "..." }, "repaymentCapability": "strong/adequate/weak", "overallHealthScore": 0, "summary": "..." }`),
 
-Calculate and assess:
-- Debt-to-equity ratio
-- Profit margins
-- Liquidity ratios
-- Repayment capability
-- Cash flow adequacy
-
-Respond in this JSON format:
-{
-  "ratios": [
-    { "name": "ratio name", "value": 0.0, "benchmark": 0.0, "status": "good/warning/critical" }
-  ],
-  "profitability": { "score": 0, "assessment": "..." },
-  "liquidity": { "score": 0, "assessment": "..." },
-  "solvency": { "score": 0, "assessment": "..." },
-  "repaymentCapability": "strong/adequate/weak",
-  "overallHealthScore": 0,
-  "summary": "brief summary"
-}`),
-
-            // 3. Research Agent
-            runAgent("Research Agent", `You are a Research Agent for credit appraisal. Based on the company information, provide insights about external factors.
-
+            runAgent("Research Agent", `You are a Research Agent for credit appraisal. Analyze external factors.
 Company: ${companyStr}
-Sector: ${company.sector || "unknown"}
+Sector: ${(company as any).sector || "unknown"}
+Respond in JSON: { "industryOutlook": "positive/neutral/negative", "industryGrowthRate": "X%", "marketSentiment": "positive/neutral/negative", "keyTrends": ["..."], "regulatoryRisks": ["..."], "competitivePosition": "strong/moderate/weak", "newsHighlights": [{ "title": "...", "sentiment": "...", "impact": "..." }], "litigationFlags": [], "summary": "..." }`),
 
-Analyze and report on:
-- Industry trends and outlook
-- Likely market sentiment
-- Potential litigation risks
-- Regulatory environment
-- Competitive landscape
-
-Respond in this JSON format:
-{
-  "industryOutlook": "positive/neutral/negative",
-  "industryGrowthRate": "X%",
-  "marketSentiment": "positive/neutral/negative",
-  "keyTrends": ["trend 1", "trend 2"],
-  "regulatoryRisks": ["risk 1"],
-  "competitivePosition": "strong/moderate/weak",
-  "newsHighlights": [
-    { "title": "headline", "sentiment": "positive/negative/neutral", "impact": "high/medium/low" }
-  ],
-  "litigationFlags": [],
-  "summary": "brief summary"
-}`),
-
-            // 4. Promoter Analysis Tool
-            runAgent("Promoter Analysis", `You are a Promoter Analysis AI for credit appraisal. Assess the risk profile of the company's promoters/directors.
-
+            runAgent("Promoter Analysis", `You are a Promoter Analysis AI. Assess promoter risk profile.
 Company: ${companyStr}
-
-Evaluate:
-- Promoter background and reputation
-- Potential fraud indicators
-- Litigation history likelihood
-- Related entity risk
-- Financial misconduct signals
-
-Respond in this JSON format:
-{
-  "overallRisk": "low/medium/high",
-  "fraudProbability": "X%",
-  "reputationScore": 0,
-  "riskFlags": ["flag 1"],
-  "promoterStrengths": ["strength 1"],
-  "relatedEntityRisk": "low/medium/high",
-  "recommendedChecks": ["check 1"],
-  "summary": "brief summary"
-}`),
+Respond in JSON: { "overallRisk": "low/medium/high", "fraudProbability": "X%", "reputationScore": 0, "riskFlags": ["..."], "promoterStrengths": ["..."], "relatedEntityRisk": "low/medium/high", "recommendedChecks": ["..."], "summary": "..." }`),
         ]);
 
         const agentResults = {
             documentAnalysis: docAnalysis,
             financialAnalysis: finAnalysis,
-            researchAnalysis: researchAnalysis,
-            promoterAnalysis: promoterAnalysis,
+            researchAnalysis,
+            promoterAnalysis,
             completedAt: new Date().toISOString(),
         };
 
-        // Store in workspace
-        if (workspaceId && workspaces[workspaceId]) {
-            workspaces[workspaceId].agentResults = agentResults;
+        if (workspaceId) {
+            await Workspace.findOneAndUpdate(
+                { id: workspaceId },
+                { $set: { agentResults } }
+            );
         }
 
-        res.json({
-            success: true,
-            agentResults,
-        });
+        res.json({ success: true, agentResults });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

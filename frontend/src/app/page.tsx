@@ -62,12 +62,12 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 pointer-events-auto">
-             <Link href="/dashboard" className="px-8 py-4 rounded-xl bg-brand hover:bg-blue-600 text-white font-bold transition-all shadow-[0_0_30px_rgba(22,58,92,0.8)] flex items-center gap-2 group border border-blue-400/30">
-                Launch Dashboard
+             <Link href="/onboarding" className="px-8 py-4 rounded-xl bg-brand hover:bg-blue-600 text-white font-bold transition-all shadow-[0_0_30px_rgba(22,58,92,0.8)] flex items-center gap-2 group border border-blue-400/30">
+                Get Started
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
              </Link>
-             <Link href="#" className="px-8 py-4 rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold transition-all border border-[#1e293b] hover:border-gray-500 flex items-center gap-2">
-                Talk to Sales
+             <Link href="/dashboard" className="px-8 py-4 rounded-xl bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold transition-all border border-[#1e293b] hover:border-gray-500 flex items-center gap-2">
+                Launch Dashboard
              </Link>
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function LandingPage() {
             <p className="text-xl text-zinc-400 mb-10">
                Join the fintechs, banks, and startups currently running their credit infrastructure on CreditAI.
             </p>
-            <Link href="/dashboard" className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white font-bold rounded-full transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+            <Link href="/onboarding" className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white font-bold rounded-full transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                Start Exploring Live UI
             </Link>
          </div>
