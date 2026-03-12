@@ -2,6 +2,9 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IWorkspace extends Document {
     id: string;
+    organizationId: string; // Organization this workspace belongs to
+    createdBy: string; // User who created it
+    name: string; // Workspace name/identifier
     createdAt: string;
     updatedAt: string;
     company: {
@@ -24,11 +27,22 @@ export interface IWorkspace extends Document {
     orchestratorResult: any;
     earlyWarningAlerts: any[];
     report: any;
+    status: "draft" | "in_progress" | "completed" | "archived";
+    isArchived: boolean;
 }
 
 const WorkspaceSchema = new Schema<IWorkspace>(
     {
         id: { type: String, required: true, unique: true, index: true },
+        organizationId: { type: String, required: true, index: true },
+        createdBy: { type: String, required: true, index: true },
+        name: { type: String, required: true },
+        status: {
+            type: String,
+            enum: ["draft", "in_progress", "completed", "archived"],
+            default: "draft",
+        },
+        isArchived: { type: Boolean, default: false },
         company: {
             name: { type: String, default: "Unknown Company" },
             cin: { type: String, required: true },

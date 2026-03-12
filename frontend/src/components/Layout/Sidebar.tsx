@@ -81,7 +81,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                 {isActive && (
                   <motion.div
                     layoutId="active-nav"
-                    className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent border-l-2 border-emerald-500 rounded-r-xl"
+                    className="absolute inset-0 bg-gradient-to-r from-brand/10 to-transparent border-l-2 border-brand rounded-r-xl"
                     initial={false}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
@@ -90,7 +90,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                 <item.icon
                   className={cn(
                     "w-5 h-5 shrink-0 relative z-10 transition-colors",
-                    isActive ? "text-emerald-400" : "group-hover:text-gray-300"
+                    isActive ? "text-blue-400" : "group-hover:text-gray-300"
                   )}
                 />
 
@@ -111,7 +111,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                   <motion.div
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="absolute right-3 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] z-10"
+                    className="absolute right-3 w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.8)] z-10"
                   />
                 )}
               </Link>

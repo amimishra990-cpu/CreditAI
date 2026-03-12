@@ -1,43 +1,107 @@
-import { Router, Request, Response } from "express";
-import { v4 as uuidv4 } from "uuid";
+import { Router, Response } from "express";
 import { Workspace } from "../models/Workspace.js";
+import { User } from "../models/User.js";
+import { authenticate, AuthRequest } from "../middleware/auth.js";
+import { auditLog } from "../middleware/audit.js";
 
 const router = Router();
 
-// Create workspace
-router.post("/onboard", async (req: Request, res: Response) => {
+// Get user's workspaces across all organizations
+router.get("/my-workspaces", authenticate, auditLog("view_my_workspaces", "workspace"), async (req: AuthRequest, res: Response) => {
     try {
-        const {
-            cin, pan, sector, annualTurnover,
-            loanType, loanAmount, loanTenure, interestRate,
-            companyName
-        } = req.body;
-
-        if (!cin || !pan || !sector || !loanAmount) {
-            res.status(400).json({ error: "Missing required fields: cin, pan, sector, loanAmount" });
+        const user = await User.findById(req.user!.id);
+        if (!user) {
+            res.status(404).json({ error: "User not found" });
             return;
         }
 
-        const workspaceId = uuidv4();
-
-        const workspace = await Workspace.create({
-            id: workspaceId,
-            company: {
-                name: companyName || "Unknown Company",
-                cin, pan, sector, annualTurnover,
-            },
-            loan: {
-                type: loanType || "Working Capital",
-                amount: loanAmount,
-                tenure: loanTenure,
-                interestRate,
-            },
-        });
+        const orgIds = user.organizations.map((o) => o.organizationId);
+        const workspaces = await Workspace.find({
+            organizationId: { $in: orgIds },
+            isArchived: false,
+        }).sort({ createdAt: -1 });
 
         res.json({
             success: true,
-            workspaceId,
-            message: `Workspace created for ${companyName || cin}`,
+            workspaces: workspaces.map((w) => ({
+                id: w.id,
+                name: w.name,
+                organizationId: w.organizationId,
+                company: w.company,
+                loan: w.loan,
+                status: w.status,
+                createdAt: w.createdAt,
+            })),
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get workspace by ID (requires authentication and membership)
+router.get("/workspace/:id", authenticate, auditLog("view_workspace", "workspace"), async (req: AuthRequest, res: Response) => {
+    try {
+        const workspace = await Workspace.findOne({ id: req.params.id });
+        if (!workspace) {
+            res.status(404).json({ error: "Workspace not found" });
+            return;
+        }
+
+        // Check if user has access to this workspace's organization
+        const user = await User.findById(req.user!.id);
+        const hasAccess = user?.organizations.some(
+            (o) => o.organizationId === workspace.organizationId
+        );
+
+        if (!hasAccess) {
+            res.status(403).json({ error: "Access denied" });
+            return;
+        }
+
+        res.json(workspace);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update workspace
+router.put("/workspace/:id", authenticate, auditLog("update_workspace", "workspace"), async (req: AuthRequest, res: Response) => {
+    try {
+        const workspace = await Workspace.findOne({ id: req.params.id });
+        if (!workspace) {
+            res.status(404).json({ error: "Workspace not found" });
+            return;
+        }
+
+        // Check if user has access
+        const user = await User.findById(req.user!.id);
+        const userOrg = user?.organizations.find(
+            (o) => o.organizationId === workspace.organizationId
+        );
+
+        if (!userOrg) {
+            res.status(403).json({ error: "Access denied" });
+            return;
+        }
+
+        // Update allowed fields
+        const allowedUpdates = [
+            "name", "status", "documents", "classifications",
+            "extractedData", "agentResults", "orchestratorResult",
+            "earlyWarningAlerts", "report"
+        ];
+
+        Object.keys(req.body).forEach((key) => {
+            if (allowedUpdates.includes(key)) {
+                (workspace as any)[key] = req.body[key];
+            }
+        });
+
+        await workspace.save();
+
+        res.json({
+            success: true,
+            message: "Workspace updated successfully",
             workspace,
         });
     } catch (error: any) {
@@ -45,47 +109,28 @@ router.post("/onboard", async (req: Request, res: Response) => {
     }
 });
 
-// Get workspace by ID
-router.get("/workspace/:id", async (req: Request, res: Response) => {
+// Delete workspace (admin/owner only)
+router.delete("/workspace/:id", authenticate, auditLog("delete_workspace", "workspace"), async (req: AuthRequest, res: Response) => {
     try {
         const workspace = await Workspace.findOne({ id: req.params.id });
         if (!workspace) {
             res.status(404).json({ error: "Workspace not found" });
             return;
         }
-        res.json(workspace);
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
-// List all workspaces
-router.get("/workspaces", async (_req: Request, res: Response) => {
-    try {
-        const workspaces = await Workspace.find({}, {
-            id: 1, company: 1, loan: 1, createdAt: 1
-        }).sort({ createdAt: -1 });
+        // Check if user is admin/owner
+        const user = await User.findById(req.user!.id);
+        const userOrg = user?.organizations.find(
+            (o) => o.organizationId === workspace.organizationId
+        );
 
-        const list = workspaces.map((w) => ({
-            id: w.id,
-            companyName: w.company?.name,
-            cin: w.company?.cin,
-            sector: w.company?.sector,
-            loanAmount: w.loan?.amount,
-            loanType: w.loan?.type,
-            createdAt: w.createdAt,
-        }));
-        res.json(list);
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        if (!userOrg || !["owner", "admin"].includes(userOrg.role)) {
+            res.status(403).json({ error: "Admin access required" });
+            return;
+        }
 
-// Delete workspace
-router.delete("/workspace/:id", async (req: Request, res: Response) => {
-    try {
         await Workspace.deleteOne({ id: req.params.id });
-        res.json({ success: true });
+        res.json({ success: true, message: "Workspace deleted successfully" });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

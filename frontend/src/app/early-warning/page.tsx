@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import ShinyText from "@/components/ui/ShinyText";
 import { Meteors } from "@/components/ui/Meteors";
+import { apiClient } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function EarlyWarningPage() {
   const router = useRouter();
@@ -17,18 +19,14 @@ export default function EarlyWarningPage() {
   const [result, setResult] = useState<any>(null);
   const [acknowledged, setAcknowledged] = useState<Set<number>>(new Set());
 
-  const workspaceId = typeof window !== "undefined" ? localStorage.getItem("creditai_workspace") : null;
-
   const handleScan = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/early-warning", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspaceId }),
-      });
-      const data = await res.json();
-      if (data.success) setResult(data);
+      const res = await apiClient.getEarlyWarning({});
+      if (res.data.success) {
+        setResult(res.data);
+        toast.success("Risk scan completed");
+      }
     } catch (err) {
       console.error(err);
     }
@@ -67,7 +65,7 @@ export default function EarlyWarningPage() {
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case "increasing": return <TrendingUp className="w-4 h-4 text-red-400" />;
-      case "decreasing": return <TrendingDown className="w-4 h-4 text-emerald-400" />;
+      case "decreasing": return <TrendingDown className="w-4 h-4 text-blue-400" />;
       case "stable": return <Minus className="w-4 h-4 text-gray-400" />;
       default: return null;
     }
@@ -97,7 +95,7 @@ export default function EarlyWarningPage() {
             {result && (
               <button
                 onClick={() => router.push("/report")}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-[0_0_25px_rgba(16,185,129,0.3)]"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold rounded-xl transition-all shadow-[0_0_25px_rgba(22,58,92,0.5)]"
               >
                 Generate Report <ArrowRight className="w-4 h-4" />
               </button>
@@ -111,8 +109,8 @@ export default function EarlyWarningPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className={`p-4 rounded-xl flex items-center justify-between border ${result.overallRiskTrend === "increasing" ? "bg-red-500/5 border-red-500/20" :
-                result.overallRiskTrend === "decreasing" ? "bg-emerald-500/5 border-emerald-500/20" :
-                  "bg-[#0f172a] border-[#1e293b]"
+              result.overallRiskTrend === "decreasing" ? "bg-emerald-500/5 border-emerald-500/20" :
+                "bg-[#0f172a] border-[#1e293b]"
               }`}
           >
             <div className="flex items-center gap-3">
@@ -154,7 +152,7 @@ export default function EarlyWarningPage() {
                       </div>
                       <p className="text-sm text-gray-400 leading-relaxed">{alert.description}</p>
                       {alert.recommended_action && (
-                        <p className="text-xs text-emerald-400/80 mt-2">
+                        <p className="text-xs text-blue-400/80 mt-2">
                           <span className="font-semibold">Recommended:</span> {alert.recommended_action}
                         </p>
                       )}
@@ -166,8 +164,8 @@ export default function EarlyWarningPage() {
                   <button
                     onClick={() => toggleAck(alert.id || idx)}
                     className={`shrink-0 p-2 rounded-lg border transition-all ${acknowledged.has(alert.id || idx)
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                        : "bg-[#0f172a] border-[#1e293b] text-gray-500 hover:text-gray-300"
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                      : "bg-[#0f172a] border-[#1e293b] text-gray-500 hover:text-gray-300"
                       }`}
                   >
                     {acknowledged.has(alert.id || idx) ? <CheckCircle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}

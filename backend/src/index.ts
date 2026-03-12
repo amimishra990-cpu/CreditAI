@@ -4,9 +4,12 @@ import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 import { connectDB } from "./db.js";
+import { securityHeaders, apiLimiter, sanitizeInput, corsOptions } from "./middleware/security.js";
 
 dotenv.config();
 
+import authRouter from "./routes/auth.js";
+import organizationsRouter from "./routes/organizations.js";
 import onboardRouter from "./routes/onboard.js";
 import uploadRouter from "./routes/upload.js";
 import classifyRouter from "./routes/classify.js";
@@ -24,13 +27,20 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Middleware
-app.use(cors({ origin: "*" }));
+// Security Middleware
+app.use(securityHeaders);
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(sanitizeInput);
 app.use("/uploads", express.static(uploadsDir));
 
+// Apply rate limiting to all API routes
+app.use("/api", apiLimiter);
+
 // Routes
+app.use("/api/auth", authRouter);
+app.use("/api/organizations", organizationsRouter);
 app.use("/api", onboardRouter);
 app.use("/api", uploadRouter);
 app.use("/api", classifyRouter);
@@ -48,5 +58,6 @@ app.get("/api/health", (_req, res) => {
 connectDB().then(() => {
     app.listen(PORT, () => {
         console.log(`🚀 CreditAI Backend running on http://localhost:${PORT}`);
+        console.log(`🔒 Security features enabled`);
     });
 });

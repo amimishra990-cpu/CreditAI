@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import ShinyText from "@/components/ui/ShinyText";
 import { Meteors } from "@/components/ui/Meteors";
+import { apiClient } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface UploadedDoc {
   id: string;
@@ -29,25 +31,41 @@ export default function DataIngestionPage() {
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
   const [classificationsDone, setClassificationsDone] = useState(false);
 
-  const workspaceId = typeof window !== "undefined" ? localStorage.getItem("creditai_workspace") : null;
+  useEffect(() => {
+    loadWorkspace();
+  }, []);
+
+  const loadWorkspace = async () => {
+    try {
+      const response = await apiClient.getMyWorkspace();
+      const workspace = response.data;
+      if (workspace.documents) {
+        setDocuments(workspace.documents);
+      }
+      if (workspace.classifications && workspace.classifications.length > 0) {
+        setClassificationsDone(true);
+      }
+    } catch (error) {
+      console.error("Failed to load workspace:", error);
+    }
+  };
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     setUploading(true);
     const formData = new FormData();
     Array.from(files).forEach((file) => formData.append("files", file));
-    if (workspaceId) formData.append("workspaceId", workspaceId);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.success) {
-        setDocuments((prev) => [...prev, ...data.documents]);
+      const res = await apiClient.uploadDocuments(formData);
+      if (res.data.success) {
+        setDocuments((prev) => [...prev, ...res.data.documents]);
+        toast.success(`${res.data.documents.length} document(s) uploaded successfully`);
       }
     } catch (err) {
       console.error(err);
     }
     setUploading(false);
-  }, [workspaceId]);
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -62,20 +80,17 @@ export default function DataIngestionPage() {
   const handleProcessClassification = async () => {
     setProcessing(true);
     try {
-      const res = await fetch("/api/classify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workspaceId,
-          documents: documents.map((d) => ({
-            id: d.id,
-            classification: d.classification,
-            extractedText: d.extractedText,
-          })),
-        }),
+      const res = await apiClient.classifyDocuments({
+        documents: documents.map((d) => ({
+          id: d.id,
+          classification: d.classification,
+          extractedText: d.extractedText,
+        })),
       });
-      const data = await res.json();
-      if (data.success) setClassificationsDone(true);
+      if (res.data.success) {
+        setClassificationsDone(true);
+        toast.success("Classifications saved successfully");
+      }
     } catch (err) {
       console.error(err);
     }
@@ -105,16 +120,16 @@ export default function DataIngestionPage() {
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           className={`relative p-12 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center min-h-[250px] overflow-hidden shadow-xl ${dragOver
-              ? "border-emerald-500 bg-emerald-500/5"
-              : "border-[#1e293b] bg-[#080d1a] hover:border-[#334155]"
+            ? "border-emerald-500 bg-emerald-500/5"
+            : "border-[#1e293b] bg-[#080d1a] hover:border-[#334155]"
             }`}
         >
           <Meteors number={10} />
           <div className="relative z-10 flex flex-col items-center">
             {uploading ? (
               <>
-                <Loader2 className="w-16 h-16 text-emerald-400 animate-spin mb-4" />
-                <p className="text-lg font-medium text-gray-200">Processing with Gemini Vision OCR...</p>
+                <Loader2 className="w-16 h-16 text-brand animate-spin mb-4" />
+                <p className="text-lg font-medium text-gray-200">Processing with Groq AI OCR...</p>
                 <p className="text-sm text-gray-400 mt-1">Extracting text and classifying documents</p>
               </>
             ) : (
@@ -146,14 +161,14 @@ export default function DataIngestionPage() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-                <Database className="w-5 h-5 text-emerald-400" />
+                <Database className="w-5 h-5 text-blue-400" />
                 <ShinyText text={`Processed Documents (${documents.length})`} disabled={false} speed={2} className="text-gray-200" />
               </h2>
               {!classificationsDone && (
                 <button
                   onClick={handleProcessClassification}
                   disabled={processing}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-medium rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-medium rounded-xl transition-all shadow-[0_0_20px_rgba(22,58,92,0.4)] disabled:opacity-50"
                 >
                   {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                   {processing ? "Extracting Schema..." : "Confirm & Extract Schema"}
@@ -162,7 +177,7 @@ export default function DataIngestionPage() {
               {classificationsDone && (
                 <button
                   onClick={() => router.push("/agent-analysis")}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-medium rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-medium rounded-xl transition-all shadow-[0_0_20px_rgba(22,58,92,0.4)]"
                 >
                   Continue to Analysis <ArrowRight className="w-4 h-4" />
                 </button>
@@ -195,14 +210,14 @@ export default function DataIngestionPage() {
                         <select
                           value={doc.classification}
                           onChange={(e) => updateClassification(doc.id, e.target.value)}
-                          className="bg-[#0f172a] border border-[#1e293b] rounded-lg px-3 py-1.5 text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                          className="bg-[#0f172a] border border-[#1e293b] rounded-lg px-3 py-1.5 text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-brand/50"
                         >
                           {docCategories.map((cat) => (
                             <option key={cat} value={cat}>{cat}</option>
                           ))}
                         </select>
                         {doc.analystVerified ? (
-                          <span className="text-xs text-emerald-400 flex items-center gap-1">
+                          <span className="text-xs text-blue-400 flex items-center gap-1">
                             <Edit3 className="w-3 h-3" /> Verified
                           </span>
                         ) : (
@@ -212,7 +227,7 @@ export default function DataIngestionPage() {
                         )}
                       </div>
 
-                      <CheckCircle className="w-5 h-5 text-emerald-400" />
+                      <CheckCircle className="w-5 h-5 text-blue-400" />
 
                       <button
                         onClick={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)}
@@ -238,8 +253,8 @@ export default function DataIngestionPage() {
                       >
                         <div className="p-5">
                           <div className="flex items-center gap-2 mb-3">
-                            <Eye className="w-4 h-4 text-emerald-400" />
-                            <span className="text-sm font-medium text-gray-300">Gemini OCR Extracted Text</span>
+                            <Eye className="w-4 h-4 text-blue-400" />
+                            <span className="text-sm font-medium text-gray-300">Groq AI Extracted Text</span>
                           </div>
                           <pre className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-4 text-xs text-gray-300 font-mono max-h-[300px] overflow-y-auto whitespace-pre-wrap leading-relaxed">
                             {doc.extractedText || "No text extracted."}

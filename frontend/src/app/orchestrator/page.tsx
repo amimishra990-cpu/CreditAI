@@ -11,24 +11,22 @@ import {
 import ShinyText from "@/components/ui/ShinyText";
 import { Meteors } from "@/components/ui/Meteors";
 import RiskGauge from "@/components/ui/RiskGauge";
+import { apiClient } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function OrchestratorPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const workspaceId = typeof window !== "undefined" ? localStorage.getItem("creditai_workspace") : null;
-
   const handleOrchestrate = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/orchestrate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspaceId }),
-      });
-      const data = await res.json();
-      if (data.success) setResult(data.orchestratorResult);
+      const res = await apiClient.orchestrate({});
+      if (res.data.success) {
+        setResult(res.data.orchestratorResult);
+        toast.success("Orchestration completed successfully");
+      }
     } catch (err) {
       console.error(err);
     }
@@ -38,7 +36,7 @@ export default function OrchestratorPage() {
   const getDecisionColor = (rec: string) => {
     if (!rec) return "text-gray-400";
     const lower = rec.toLowerCase();
-    if (lower.includes("approve") && !lower.includes("condition")) return "text-emerald-400";
+    if (lower.includes("approve") && !lower.includes("condition")) return "text-blue-400";
     if (lower.includes("condition")) return "text-yellow-400";
     return "text-red-400";
   };
@@ -46,7 +44,7 @@ export default function OrchestratorPage() {
   const getDecisionBg = (rec: string) => {
     if (!rec) return "bg-gray-500/10 border-gray-500/30";
     const lower = rec.toLowerCase();
-    if (lower.includes("approve") && !lower.includes("condition")) return "bg-emerald-500/10 border-emerald-500/30";
+    if (lower.includes("approve") && !lower.includes("condition")) return "bg-brand/10 border-brand/30";
     if (lower.includes("condition")) return "bg-yellow-500/10 border-yellow-500/30";
     return "bg-red-500/10 border-red-500/30";
   };
@@ -67,7 +65,7 @@ export default function OrchestratorPage() {
             {!loading && !result && (
               <button
                 onClick={handleOrchestrate}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-[0_0_25px_rgba(16,185,129,0.3)]"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold rounded-xl transition-all shadow-[0_0_25px_rgba(22,58,92,0.5)]"
               >
                 <Play className="w-4 h-4" /> Run Orchestrator
               </button>
@@ -75,7 +73,7 @@ export default function OrchestratorPage() {
             {result && (
               <button
                 onClick={() => router.push("/early-warning")}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-[0_0_25px_rgba(16,185,129,0.3)]"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold rounded-xl transition-all shadow-[0_0_25px_rgba(22,58,92,0.5)]"
               >
                 Early Warning Scan <ArrowRight className="w-4 h-4" />
               </button>
@@ -87,7 +85,7 @@ export default function OrchestratorPage() {
         {loading && (
           <div className="p-12 rounded-2xl bg-[#080d1a] border border-[#1e293b] flex flex-col items-center justify-center relative overflow-hidden shadow-xl min-h-[400px]">
             <Meteors number={20} />
-            <Loader2 className="w-16 h-16 text-emerald-400 animate-spin mb-6 relative z-10" />
+            <Loader2 className="w-16 h-16 text-brand animate-spin mb-6 relative z-10" />
             <h2 className="text-2xl font-bold mb-2 z-10">
               <ShinyText text="Synthesizing Agent Insights..." disabled={false} speed={2.5} className="text-gray-200" />
             </h2>
@@ -135,7 +133,7 @@ export default function OrchestratorPage() {
                 className="p-6 rounded-2xl bg-[#080d1a] border border-[#1e293b] flex flex-col justify-center shadow-xl"
               >
                 <div className="flex items-center gap-2 mb-4">
-                  <Target className="w-5 h-5 text-emerald-400" />
+                  <Target className="w-5 h-5 text-blue-400" />
                   <span className="text-sm font-medium text-gray-300">Agent Confidence</span>
                 </div>
                 {result.confidenceBreakdown?.map((a: any, i: number) => (
@@ -144,11 +142,11 @@ export default function OrchestratorPage() {
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-1.5 bg-[#1e293b] rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full ${a.confidence > 0.7 ? "bg-emerald-500" : "bg-orange-500"}`}
+                          className={`h-full rounded-full ${a.confidence > 0.7 ? "bg-blue-500" : "bg-orange-500"}`}
                           style={{ width: `${(a.confidence || 0) * 100}%` }}
                         />
                       </div>
-                      <span className={`font-mono ${a.confidence > 0.7 ? "text-emerald-400" : "text-orange-400"}`}>
+                      <span className={`font-mono ${a.confidence > 0.7 ? "text-blue-400" : "text-orange-400"}`}>
                         {((a.confidence || 0) * 100).toFixed(0)}%
                       </span>
                     </div>
@@ -156,7 +154,7 @@ export default function OrchestratorPage() {
                 ))}
                 <div className="mt-3 pt-3 border-t border-[#1e293b] flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-300">Overall</span>
-                  <span className="text-lg font-bold text-emerald-400">
+                  <span className="text-lg font-bold text-blue-400">
                     {((result.confidenceScore || 0) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -172,13 +170,13 @@ export default function OrchestratorPage() {
                 className="p-6 rounded-2xl bg-[#080d1a] border border-[#1e293b] shadow-xl"
               >
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-emerald-400" />
+                  <Zap className="w-5 h-5 text-blue-400" />
                   <ShinyText text="Explainable Reasoning" disabled={false} speed={2} className="text-gray-200" />
                 </h3>
                 <div className="space-y-3">
                   {result.explanations.map((exp: string, i: number) => (
                     <div key={i} className="flex items-start gap-3 p-3 bg-[#0f172a] rounded-xl border border-[#1e293b]">
-                      <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                      <CheckCircle className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
                       <p className="text-sm text-gray-300">{exp}</p>
                     </div>
                   ))}
@@ -195,7 +193,7 @@ export default function OrchestratorPage() {
                 className="grid grid-cols-1 md:grid-cols-2 gap-4"
               >
                 {[
-                  { title: "Strengths", items: result.swot.strengths, icon: Star, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+                  { title: "Strengths", items: result.swot.strengths, icon: Star, color: "text-blue-400", bg: "bg-brand/10 border-brand/20" },
                   { title: "Weaknesses", items: result.swot.weaknesses, icon: TrendingDown, color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
                   { title: "Opportunities", items: result.swot.opportunities, icon: TrendingUp, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
                   { title: "Threats", items: result.swot.threats, icon: AlertTriangle, color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/20" },
@@ -250,9 +248,9 @@ export default function OrchestratorPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="p-6 rounded-2xl bg-gradient-to-br from-[#080d1a] to-[#0f172a] border border-emerald-500/20 shadow-xl"
+                className="p-6 rounded-2xl bg-gradient-to-br from-[#080d1a] to-[#0f172a] border border-brand/20 shadow-xl"
               >
-                <h3 className="text-sm font-bold text-emerald-400 mb-2 uppercase tracking-wider">Executive Summary</h3>
+                <h3 className="text-sm font-bold text-blue-400 mb-2 uppercase tracking-wider">Executive Summary</h3>
                 <p className="text-gray-300 leading-relaxed">{result.summary}</p>
               </motion.div>
             )}
