@@ -30,54 +30,69 @@
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
 
-  --color-brand: #163A5C;
+  /* Professional Black & Silver Theme */
+  --color-brand: #C0C0C0;
+  --color-brand-dark: #808080;
+  --color-silver: #C0C0C0;
+  --color-silver-light: #E8E8E8;
+  --color-silver-dark: #A0A0A0;
 
-  --animate-meteor: meteor 5s linear infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-glow: glow 3s ease-in-out infinite;
 
-  @keyframes meteor {
+  @keyframes shimmer {
     0% {
-      transform: rotate(215deg) translateX(0);
-      opacity: 1;
+      background-position: -1000px 0;
     }
-    70% {
-      opacity: 1;
-    }
+
     100% {
-      transform: rotate(215deg) translateX(-500px);
-      opacity: 0;
+      background-position: 1000px 0;
+    }
+  }
+
+  @keyframes glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(192, 192, 192, 0.3);
+    }
+
+    50% {
+      box-shadow: 0 0 40px rgba(192, 192, 192, 0.6);
     }
   }
 }
 
 @layer base {
   :root {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
+    /* Pure Black & Silver Professional Theme */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
 
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 20% 98%;
-    --primary-foreground: 220 9% 46%;
+    --primary: 0 0% 75%;
+    --primary-foreground: 0 0% 10%;
 
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
+    --accent: 0 0% 75%;
+    --accent-foreground: 0 0% 10%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 216 12.2% 83.9%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 75%;
   }
 }
 
@@ -85,8 +100,54 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-black text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background: linear-gradient(to bottom, #000000 0%, #0a0a0a 100%);
   }
+
+  /* Professional scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0a0a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #606060;
+  }
+}
+
+/* Professional Silver Accents */
+.silver-gradient {
+  background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
+}
+
+.silver-text {
+  background: linear-gradient(135deg, #E8E8E8 0%, #A0A0A0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.silver-border {
+  border: 1px solid rgba(192, 192, 192, 0.3);
+}
+
+.silver-glow {
+  box-shadow: 0 0 20px rgba(192, 192, 192, 0.2);
+}
+
+.silver-glow-hover:hover {
+  box-shadow: 0 0 30px rgba(192, 192, 192, 0.4);
+  transition: box-shadow 0.3s ease;
 }

@@ -89,18 +89,18 @@ export function TopBar() {
   if (!shouldShow) return null;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#1e293b]/60 bg-[#030712]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-[#333333] bg-black/95 backdrop-blur-xl">
       <div className="flex h-16 items-center justify-between px-4 md:px-6 max-w-[1920px] mx-auto">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-3 shrink-0">
-          <div className="bg-brand/20 p-2 rounded-xl flex items-center justify-center border border-brand/50 shadow-[0_0_15px_rgba(22,58,92,0.5)]">
-            <ShieldAlert className="text-brand w-5 h-5" />
+          <div className="bg-[#C0C0C0]/10 p-2 rounded-xl flex items-center justify-center border border-[#C0C0C0]/30 shadow-[0_0_15px_rgba(192,192,192,0.3)]">
+            <ShieldAlert className="text-[#C0C0C0] w-5 h-5" />
           </div>
           <ShinyText
             text="CreditAI"
             disabled={false}
             speed={2.5}
-            className="text-xl font-black tracking-tight hidden sm:block"
+            className="text-xl font-black tracking-tight hidden sm:block silver-text"
           />
         </Link>
 
@@ -115,8 +115,8 @@ export function TopBar() {
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
                   isActive
-                    ? "bg-brand/15 text-blue-100"
-                    : "text-gray-400 hover:text-gray-100 hover:bg-[#1e293b]/50"
+                    ? "bg-[#C0C0C0]/15 text-white silver-border"
+                    : "text-gray-400 hover:text-white hover:bg-[#1a1a1a]"
                 )}
               >
                 <item.icon className="w-4 h-4" />
@@ -131,25 +131,25 @@ export function TopBar() {
           {/* New Workspace Button */}
           <Link
             href="/workspace/new"
-            className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white text-sm font-bold rounded-lg transition-all"
+            className="hidden md:flex items-center gap-2 px-4 py-2 silver-gradient hover:opacity-90 text-black text-sm font-bold rounded-lg transition-all silver-glow-hover"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden xl:inline">New Workspace</span>
           </Link>
 
           {/* Notifications */}
-          <button className="relative p-2 text-gray-400 hover:text-blue-400 transition-colors rounded-lg hover:bg-brand/10">
+          <button className="relative p-2 text-gray-400 hover:text-[#C0C0C0] transition-colors rounded-lg hover:bg-[#C0C0C0]/10">
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-[#030712] shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-black shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
           </button>
 
           {/* User Menu */}
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="h-9 w-9 rounded-full bg-gradient-to-br from-brand to-blue-600 flex items-center justify-center p-[2px] shadow-[0_0_10px_rgba(22,58,92,0.5)] hover:shadow-[0_0_15px_rgba(22,58,92,0.8)] transition-all overflow-hidden group"
+              className="h-9 w-9 rounded-full bg-gradient-to-br from-[#C0C0C0] to-[#808080] flex items-center justify-center p-[2px] shadow-[0_0_10px_rgba(192,192,192,0.5)] hover:shadow-[0_0_15px_rgba(192,192,192,0.8)] transition-all overflow-hidden group"
             >
-              <div className="h-full w-full rounded-full bg-[#030712] flex items-center justify-center transition-colors group-hover:bg-[#030712]/80">
+              <div className="h-full w-full rounded-full bg-black flex items-center justify-center transition-colors group-hover:bg-[#0a0a0a]">
                 <User className="w-4 h-4 text-gray-300 group-hover:text-white transition-colors" />
               </div>
             </button>
@@ -158,11 +158,11 @@ export function TopBar() {
             {showUserMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-                <div className="absolute right-0 mt-2 w-72 rounded-xl bg-[#0f172a] border border-[#1e293b] shadow-2xl z-50 overflow-hidden">
-                  <div className="p-4 border-b border-[#1e293b]">
+                <div className="absolute right-0 mt-2 w-72 rounded-xl bg-[#0a0a0a] border border-[#333333] shadow-2xl z-50 overflow-hidden">
+                  <div className="p-4 border-b border-[#333333]">
                     <div className="flex items-start gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand to-blue-600 flex items-center justify-center flex-shrink-0">
-                        <User className="w-5 h-5 text-white" />
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#C0C0C0] to-[#808080] flex items-center justify-center flex-shrink-0">
+                        <User className="w-5 h-5 text-black" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
@@ -199,7 +199,7 @@ export function TopBar() {
                           setShowUserMenu(false);
                           router.push("/dashboard");
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#1e293b] rounded-lg transition-colors"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
                       >
                         <Building2 className="w-4 h-4" />
                         Switch Organization
@@ -210,7 +210,7 @@ export function TopBar() {
                         setShowUserMenu(false);
                         router.push("/settings");
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#1e293b] rounded-lg transition-colors"
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
                     >
                       <Settings className="w-4 h-4" />
                       Settings
@@ -243,7 +243,7 @@ export function TopBar() {
 
       {/* Mobile Navigation */}
       {showMobileMenu && (
-        <div className="lg:hidden border-t border-[#1e293b] bg-[#0f172a]/95 backdrop-blur-xl">
+        <div className="lg:hidden border-t border-[#333333] bg-[#0a0a0a]/95 backdrop-blur-xl">
           <nav className="p-4 space-y-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
@@ -255,8 +255,8 @@ export function TopBar() {
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all",
                     isActive
-                      ? "bg-brand/15 text-blue-100"
-                      : "text-gray-400 hover:text-gray-100 hover:bg-[#1e293b]/50"
+                      ? "bg-[#C0C0C0]/15 text-white silver-border"
+                      : "text-gray-400 hover:text-white hover:bg-[#1a1a1a]"
                   )}
                 >
                   <item.icon className="w-5 h-5" />
@@ -267,7 +267,7 @@ export function TopBar() {
             <Link
               href="/workspace/new"
               onClick={() => setShowMobileMenu(false)}
-              className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-brand to-blue-700 text-white rounded-lg text-sm font-bold"
+              className="flex items-center gap-3 px-4 py-3 silver-gradient text-black rounded-lg text-sm font-bold"
             >
               <Plus className="w-5 h-5" />
               <span>New Workspace</span>

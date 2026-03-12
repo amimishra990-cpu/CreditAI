@@ -29,10 +29,10 @@ export default function LoginPage() {
     };
 
     const inputClass =
-        "w-full bg-[#0f172a] border border-[#1e293b] rounded-xl px-4 py-3 pl-12 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand/50 transition-all";
+        "w-full bg-[#0a0a0a] border border-[#333333] rounded-xl px-4 py-3 pl-12 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#C0C0C0]/50 focus:border-[#C0C0C0]/50 transition-all";
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#020817] px-4">
+        <div className="min-h-screen flex items-center justify-center bg-black px-4">
             <div className="w-full max-w-md">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -41,17 +41,17 @@ export default function LoginPage() {
                 >
                     {/* Logo/Header */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand/20 to-blue-600/20 border border-brand/30 mb-4">
-                            <Shield className="w-8 h-8 text-blue-400" />
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#C0C0C0]/10 border border-[#C0C0C0]/30 mb-4 silver-glow">
+                            <Shield className="w-8 h-8 text-[#C0C0C0]" />
                         </div>
                         <h1 className="text-3xl font-bold mb-2">
-                            <ShinyText text="CreditAI" disabled={false} speed={2} className="text-[#f8fafc]" />
+                            <ShinyText text="CreditAI" disabled={false} speed={2} className="silver-text" />
                         </h1>
                         <p className="text-gray-400 text-sm">Secure Credit Appraisal System</p>
                     </div>
 
                     {/* Login Form */}
-                    <div className="relative p-8 rounded-2xl bg-[#080d1a] border border-[#1e293b] shadow-2xl overflow-hidden">
+                    <div className="relative p-8 rounded-2xl bg-[#0a0a0a] border border-[#333333] shadow-2xl overflow-hidden silver-glow-hover">
                         <Meteors number={10} />
 
                         <div className="relative z-10">
@@ -111,7 +111,7 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-brand to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold rounded-xl transition-all shadow-[0_0_25px_rgba(22,58,92,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full flex items-center justify-center gap-2 px-6 py-3 silver-gradient hover:opacity-90 text-black font-bold rounded-xl transition-all silver-glow disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {loading ? (
                                         <>
@@ -128,7 +128,7 @@ export default function LoginPage() {
                             </form>
 
                             {/* Security Notice */}
-                            <div className="mt-6 p-4 rounded-xl bg-brand/5 border border-brand/20">
+                            <div className="mt-6 p-4 rounded-xl bg-[#C0C0C0]/5 border border-[#C0C0C0]/20">
                                 <p className="text-xs text-gray-400 text-center">
                                     🔒 Your session is secured with enterprise-grade encryption.
                                     <br />
@@ -142,7 +142,7 @@ export default function LoginPage() {
                                     Don't have an account?{" "}
                                     <Link
                                         href="/signup"
-                                        className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                                        className="text-[#C0C0C0] hover:text-[#E8E8E8] font-medium transition-colors"
                                     >
                                         Sign up
                                     </Link>

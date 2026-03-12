@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#030712] text-gray-100 min-h-screen selection:bg-brand/30`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-gray-100 min-h-screen selection:bg-silver/20`}
       >
         <AuthProvider>
           <ProtectedRoute>
@@ -38,9 +38,12 @@ export default function RootLayout({
             <div className="flex flex-col min-h-screen">
               <TopBar />
               <main className="flex-1 relative">
-                {/* Glow effects */}
-                <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand/10 blur-[120px] pointer-events-none" />
-                <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-brand/5 blur-[100px] pointer-events-none" />
+                {/* Professional Silver Glow Effects */}
+                <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#C0C0C0]/5 blur-[150px] pointer-events-none" />
+                <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#808080]/5 blur-[120px] pointer-events-none" />
+
+                {/* Subtle grid pattern */}
+                <div className="fixed inset-0 bg-[linear-gradient(rgba(192,192,192,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(192,192,192,0.03)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none" />
 
                 <div className="relative z-10">
                   {children}
@@ -53,20 +56,20 @@ export default function RootLayout({
             toastOptions={{
               duration: 4000,
               style: {
-                background: "#0f172a",
-                color: "#f8fafc",
-                border: "1px solid #1e293b",
+                background: "#0a0a0a",
+                color: "#f5f5f5",
+                border: "1px solid rgba(192, 192, 192, 0.2)",
               },
               success: {
                 iconTheme: {
-                  primary: "#10b981",
-                  secondary: "#f8fafc",
+                  primary: "#C0C0C0",
+                  secondary: "#0a0a0a",
                 },
               },
               error: {
                 iconTheme: {
                   primary: "#ef4444",
-                  secondary: "#f8fafc",
+                  secondary: "#f5f5f5",
                 },
               },
             }}

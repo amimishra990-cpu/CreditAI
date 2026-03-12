@@ -174,7 +174,7 @@ export default function DataIngestionPage() {
           {/* Header */}
           <div>
             <h1 className="text-3xl font-bold mb-2">
-              <ShinyText text="Intelligent Data Ingestion" disabled={false} speed={2} className="text-[#f8fafc]" />
+              <ShinyText text="Intelligent Data Ingestion" disabled={false} speed={2} className="silver-text" />
             </h1>
             <p className="text-gray-400 text-sm">
               Upload documents for AI-powered OCR extraction and automatic classification.
@@ -183,14 +183,14 @@ export default function DataIngestionPage() {
 
           {/* Workspace Selector */}
           {workspaces.length > 0 && (
-            <div className="p-6 bg-[#0f172a] border border-[#1e293b] rounded-2xl">
+            <div className="p-6 bg-[#0a0a0a] border border-[#333333] rounded-2xl silver-glow-hover">
               <label className="block text-sm font-medium text-gray-300 mb-3">
                 Select Workspace
               </label>
               <select
                 value={selectedWorkspace}
                 onChange={(e) => handleWorkspaceChange(e.target.value)}
-                className="w-full bg-[#080d1a] border border-[#1e293b] rounded-xl px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand/50"
+                className="w-full bg-black border border-[#333333] rounded-xl px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#C0C0C0]/50"
               >
                 <option value="">Choose a workspace...</option>
                 {workspaces.map((ws) => (
@@ -227,8 +227,8 @@ export default function DataIngestionPage() {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
               className={`relative p-12 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center min-h-[250px] overflow-hidden shadow-xl ${dragOver
-                  ? "border-emerald-500 bg-emerald-500/5"
-                  : "border-[#1e293b] bg-[#080d1a] hover:border-[#334155]"
+                ? "border-emerald-500 bg-emerald-500/5"
+                : "border-[#1e293b] bg-[#080d1a] hover:border-[#334155]"
                 }`}
             >
               <Meteors number={10} />
