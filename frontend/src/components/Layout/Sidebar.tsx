@@ -14,14 +14,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
-  UserPlus,
   FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ShinyText from "@/components/ui/ShinyText";
 
 const navItems = [
-  { name: "Onboarding", href: "/onboarding", icon: UserPlus },
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Data Ingestion", href: "/data-ingestion", icon: Database },
   { name: "Agent Analysis", href: "/agent-analysis", icon: BrainCircuit },

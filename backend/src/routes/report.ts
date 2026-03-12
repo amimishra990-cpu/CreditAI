@@ -1,24 +1,22 @@
 import { Router, Request, Response } from "express";
-import { groq, MODEL } from "../groq.js";
+import { callGroqJSON, GROQ_MODEL_SCOUT } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
+import { REPORT_FRAMEWORK_REFERENCE } from "../mathFramework.js";
 
 const router = Router();
 
 router.post("/report", async (req: Request, res: Response) => {
-  try {
-    const { workspaceId } = req.body;
+    try {
+        const { workspaceId } = req.body;
 
-    let ws: any = null;
-    if (workspaceId) {
-      ws = await Workspace.findOne({ id: workspaceId });
-    }
+        let ws: any = null;
+        if (workspaceId) {
+            ws = await Workspace.findOne({ id: workspaceId });
+        }
 
-    const response = await groq.chat.completions.create({
-      model: MODEL,
-      messages: [
-        {
-          role: "user",
-          content: `You are a Credit Appraisal Memo (CAM) generator. Generate a structured, professional credit report.
+        const prompt = `You are a Credit Appraisal Memo (CAM) generator. Generate a structured, professional credit report.
+
+${REPORT_FRAMEWORK_REFERENCE}
 
 Company: ${JSON.stringify(ws?.company || {}, null, 2)}
 Loan Details: ${JSON.stringify(ws?.loan || {}, null, 2)}
@@ -62,33 +60,21 @@ Respond ONLY in this JSON format:
     }
   },
   "executiveSummary": "2-3 sentence summary"
-}`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2048,
-    });
+}`;
 
-    const text = response.choices[0]?.message?.content || "";
-    let report: any = { raw: text };
+        const report = await callGroqJSON(GROQ_MODEL_SCOUT, prompt);
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try { report = JSON.parse(jsonMatch[0]); }
-      catch { report = { raw: text }; }
+        if (workspaceId) {
+            await Workspace.findOneAndUpdate(
+                { id: workspaceId },
+                { $set: { report } }
+            );
+        }
+
+        res.json({ success: true, report });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
     }
-
-    if (workspaceId) {
-      await Workspace.findOneAndUpdate(
-        { id: workspaceId },
-        { $set: { report } }
-      );
-    }
-
-    res.json({ success: true, report });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 export default router;
