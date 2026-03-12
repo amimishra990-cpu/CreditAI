@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
-import { ai, MODEL } from "../gemini.js";
+import { callGroqJSON, GROQ_MODEL_SCOUT } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
+import { REPORT_FRAMEWORK_REFERENCE } from "../mathFramework.js";
 
 const router = Router();
 
@@ -13,14 +14,9 @@ router.post("/report", async (req: Request, res: Response) => {
             ws = await Workspace.findOne({ id: workspaceId });
         }
 
-        const response = await ai.models.generateContent({
-            model: MODEL,
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        {
-                            text: `You are a Credit Appraisal Memo (CAM) generator. Generate a structured, professional credit report.
+        const prompt = `You are a Credit Appraisal Memo (CAM) generator. Generate a structured, professional credit report.
+
+${REPORT_FRAMEWORK_REFERENCE}
 
 Company: ${JSON.stringify(ws?.company || {}, null, 2)}
 Loan Details: ${JSON.stringify(ws?.loan || {}, null, 2)}
@@ -64,21 +60,9 @@ Respond ONLY in this JSON format:
     }
   },
   "executiveSummary": "2-3 sentence summary"
-}`,
-                        },
-                    ],
-                },
-            ],
-        });
+}`;
 
-        const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        let report: any = { raw: text };
-
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            try { report = JSON.parse(jsonMatch[0]); }
-            catch { report = { raw: text }; }
-        }
+        const report = await callGroqJSON(GROQ_MODEL_SCOUT, prompt);
 
         if (workspaceId) {
             await Workspace.findOneAndUpdate(

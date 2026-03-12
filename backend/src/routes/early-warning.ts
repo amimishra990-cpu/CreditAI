@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { ai, MODEL } from "../gemini.js";
+import { callGroqJSON, GROQ_MODEL_KIMI } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
@@ -19,14 +19,7 @@ router.post("/early-warning", async (req: Request, res: Response) => {
             }
         }
 
-        const response = await ai.models.generateContent({
-            model: MODEL,
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        {
-                            text: `You are an Early Warning Risk Detection system for a bank.
+        const prompt = `You are an Early Warning Risk Detection system for a bank.
 
 COMPANY: ${JSON.stringify(company, null, 2)}
 FINANCIAL DATA: ${JSON.stringify(data, null, 2)}
@@ -49,21 +42,12 @@ Respond ONLY in this JSON format:
   ],
   "overallRiskTrend": "increasing/stable/decreasing",
   "summary": "brief summary of risk landscape"
-}`,
-                        },
-                    ],
-                },
-            ],
+}`;
+
+        const result = await callGroqJSON(GROQ_MODEL_KIMI, prompt, {
+            temperature: 0.6,
+            maxTokens: 4096,
         });
-
-        const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        let result: any = { alerts: [], summary: text };
-
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            try { result = JSON.parse(jsonMatch[0]); }
-            catch { result = { alerts: [], summary: text }; }
-        }
 
         if (workspaceId) {
             await Workspace.findOneAndUpdate(

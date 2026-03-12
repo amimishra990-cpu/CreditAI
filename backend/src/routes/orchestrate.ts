@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
-import { ai, MODEL } from "../gemini.js";
+import { callGroqJSON, GROQ_MODEL_KIMI } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
+import { ORCHESTRATOR_FORMULAS } from "../mathFramework.js";
 
 const router = Router();
 
@@ -21,20 +22,16 @@ router.post("/orchestrate", async (req: Request, res: Response) => {
             }
         }
 
-        const response = await ai.models.generateContent({
-            model: MODEL,
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        {
-                            text: `You are the Central Orchestrator Agent for a credit appraisal system.
+        const prompt = `You are the Central Orchestrator Agent for a credit appraisal system.
+
+${ORCHESTRATOR_FORMULAS}
 
 COMPANY: ${JSON.stringify(company, null, 2)}
 LOAN REQUEST: ${JSON.stringify(loan, null, 2)}
 AGENT RESULTS: ${JSON.stringify(agents, null, 2)}
 
 Synthesize all agent insights and produce a final credit decision.
+Use the mathematical framework above to compute V_total, CS, S_final, CRS, and the final Decision.
 
 Respond ONLY in this JSON format:
 {
@@ -42,6 +39,11 @@ Respond ONLY in this JSON format:
   "riskLevel": "Low/Moderate/High/Critical",
   "recommendation": "Approve/Conditional Approval/Decline",
   "confidenceScore": 0.0,
+  "agentValueAggregation": 0.0,
+  "agentCoordinationScore": 0.0,
+  "finalSystemScore": 0.0,
+  "creditRiskScore": 0.0,
+  "decisionThreshold": { "T1": 70, "T2": 40, "appliedCRS": 0.0 },
   "explanations": ["reason 1", "reason 2"],
   "keyRiskSignals": [{ "signal": "...", "severity": "high/medium/low", "source": "agent name" }],
   "strengths": ["strength 1"],
@@ -61,21 +63,12 @@ Respond ONLY in this JSON format:
     "specialConditions": ["condition"]
   },
   "summary": "2-3 sentence executive summary"
-}`,
-                        },
-                    ],
-                },
-            ],
+}`;
+
+        const orchestratorResult = await callGroqJSON(GROQ_MODEL_KIMI, prompt, {
+            temperature: 0.6,
+            maxTokens: 4096,
         });
-
-        const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        let orchestratorResult: any = { raw: text };
-
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            try { orchestratorResult = JSON.parse(jsonMatch[0]); }
-            catch { orchestratorResult = { raw: text }; }
-        }
 
         if (workspaceId) {
             await Workspace.findOneAndUpdate(

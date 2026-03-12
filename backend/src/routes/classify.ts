@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { ai, MODEL } from "../gemini.js";
+import { callGroqJSON, GROQ_MODEL_VERSATILE } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
@@ -18,14 +18,7 @@ router.post("/classify", async (req: Request, res: Response) => {
         for (const doc of documents) {
             let structuredData = null;
             try {
-                const response = await ai.models.generateContent({
-                    model: MODEL,
-                    contents: [
-                        {
-                            role: "user",
-                            parts: [
-                                {
-                                    text: `You are a financial data extraction AI. Document classified as "${doc.classification}". Extract structured financial data.
+                const prompt = `You are a financial data extraction AI. Document classified as "${doc.classification}". Extract structured financial data.
 
 DOCUMENT TEXT:
 ${(doc.extractedText || "").substring(0, 8000)}
@@ -40,19 +33,9 @@ Respond ONLY in this JSON format:
   "interestCoverageRatio": null, "netProfitMargin": null,
   "returnOnEquity": null, "operatingProfit": null,
   "borrowings": null, "otherKeyMetrics": {}
-}`,
-                                },
-                            ],
-                        },
-                    ],
-                });
+}`;
 
-                const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                const jsonMatch = text.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    try { structuredData = JSON.parse(jsonMatch[0]); }
-                    catch { structuredData = { raw: text }; }
-                }
+                structuredData = await callGroqJSON(GROQ_MODEL_VERSATILE, prompt);
             } catch (err: any) {
                 structuredData = { error: err.message };
             }
