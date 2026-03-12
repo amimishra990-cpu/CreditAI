@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { ai, MODEL } from "../gemini.js";
+import { groq, MODEL } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
@@ -50,40 +50,37 @@ router.post("/upload", upload.array("files", 10), async (req: Request, res: Resp
                 const fileBuffer = fs.readFileSync(file.path);
                 const base64Data = fileBuffer.toString("base64");
 
-                const response = await ai.models.generateContent({
+                // Note: Groq's llama models don't support vision/multimodal input
+                // For document OCR, you may need to use a separate OCR service
+                // For now, we'll use text-only analysis with filename context
+                const response = await groq.chat.completions.create({
                     model: MODEL,
-                    contents: [
+                    messages: [
                         {
                             role: "user",
-                            parts: [
-                                {
-                                    inlineData: {
-                                        mimeType: file.mimetype || "application/pdf",
-                                        data: base64Data,
-                                    },
-                                },
-                                {
-                                    text: `You are a financial document analysis AI. Analyze this document and provide:
-1. EXTRACTED_TEXT: Extract ALL text content from this document.
-2. CLASSIFICATION: Classify this document:
+                            content: `You are a financial document analysis AI. Analyze this document based on its filename and type.
+
+FILENAME: ${file.originalname}
+MIME TYPE: ${file.mimetype}
+
+Based on the filename and type, classify this document:
    - "Annual Report", "ALM", "Shareholding Pattern", "Borrowing Profile",
    - "GST Returns", "Bank Statement", "Portfolio Performance",
    - "Legal Document", "Other Financial Document"
-3. CONFIDENCE: Your confidence in the classification (0-100)
 
 Respond ONLY in this JSON format:
 {
-  "extractedText": "...",
+  "extractedText": "[Document uploaded - OCR processing would be needed for full text extraction]",
   "classification": "...",
   "confidence": 85
 }`,
-                                },
-                            ],
                         },
                     ],
+                    temperature: 0.7,
+                    max_tokens: 1024,
                 });
 
-                const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                const text = response.choices[0]?.message?.content || "";
                 const jsonMatch = text.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     try {
@@ -98,7 +95,7 @@ Respond ONLY in this JSON format:
                     extractedText = text;
                 }
             } catch (err: any) {
-                console.error("Gemini OCR error:", err.message);
+                console.error("Groq API error:", err.message);
                 extractedText = `[OCR Error: ${err.message}]`;
             }
 

@@ -1,16 +1,18 @@
 import { Router, Request, Response } from "express";
-import { ai, MODEL } from "../gemini.js";
+import { groq, MODEL } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
 
 async function runAgent(agentName: string, prompt: string): Promise<any> {
     try {
-        const response = await ai.models.generateContent({
+        const response = await groq.chat.completions.create({
             model: MODEL,
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 2048,
         });
-        const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const text = response.choices[0]?.message?.content || "";
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             try { return { agent: agentName, status: "complete", data: JSON.parse(jsonMatch[0]) }; }

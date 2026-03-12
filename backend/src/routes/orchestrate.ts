@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { ai, MODEL } from "../gemini.js";
+import { groq, MODEL } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
@@ -21,14 +21,12 @@ router.post("/orchestrate", async (req: Request, res: Response) => {
             }
         }
 
-        const response = await ai.models.generateContent({
+        const response = await groq.chat.completions.create({
             model: MODEL,
-            contents: [
+            messages: [
                 {
                     role: "user",
-                    parts: [
-                        {
-                            text: `You are the Central Orchestrator Agent for a credit appraisal system.
+                    content: `You are the Central Orchestrator Agent for a credit appraisal system.
 
 COMPANY: ${JSON.stringify(company, null, 2)}
 LOAN REQUEST: ${JSON.stringify(loan, null, 2)}
@@ -62,13 +60,13 @@ Respond ONLY in this JSON format:
   },
   "summary": "2-3 sentence executive summary"
 }`,
-                        },
-                    ],
                 },
             ],
+            temperature: 0.7,
+            max_tokens: 2048,
         });
 
-        const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const text = response.choices[0]?.message?.content || "";
         let orchestratorResult: any = { raw: text };
 
         const jsonMatch = text.match(/\{[\s\S]*\}/);

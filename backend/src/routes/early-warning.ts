@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { ai, MODEL } from "../gemini.js";
+import { groq, MODEL } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
@@ -19,14 +19,12 @@ router.post("/early-warning", async (req: Request, res: Response) => {
             }
         }
 
-        const response = await ai.models.generateContent({
+        const response = await groq.chat.completions.create({
             model: MODEL,
-            contents: [
+            messages: [
                 {
                     role: "user",
-                    parts: [
-                        {
-                            text: `You are an Early Warning Risk Detection system for a bank.
+                    content: `You are an Early Warning Risk Detection system for a bank.
 
 COMPANY: ${JSON.stringify(company, null, 2)}
 FINANCIAL DATA: ${JSON.stringify(data, null, 2)}
@@ -50,13 +48,13 @@ Respond ONLY in this JSON format:
   "overallRiskTrend": "increasing/stable/decreasing",
   "summary": "brief summary of risk landscape"
 }`,
-                        },
-                    ],
                 },
             ],
+            temperature: 0.7,
+            max_tokens: 2048,
         });
 
-        const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const text = response.choices[0]?.message?.content || "";
         let result: any = { alerts: [], summary: text };
 
         const jsonMatch = text.match(/\{[\s\S]*\}/);

@@ -1,26 +1,24 @@
 import { Router, Request, Response } from "express";
-import { ai, MODEL } from "../gemini.js";
+import { groq, MODEL } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
 
 const router = Router();
 
 router.post("/report", async (req: Request, res: Response) => {
-    try {
-        const { workspaceId } = req.body;
+  try {
+    const { workspaceId } = req.body;
 
-        let ws: any = null;
-        if (workspaceId) {
-            ws = await Workspace.findOne({ id: workspaceId });
-        }
+    let ws: any = null;
+    if (workspaceId) {
+      ws = await Workspace.findOne({ id: workspaceId });
+    }
 
-        const response = await ai.models.generateContent({
-            model: MODEL,
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        {
-                            text: `You are a Credit Appraisal Memo (CAM) generator. Generate a structured, professional credit report.
+    const response = await groq.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "user",
+          content: `You are a Credit Appraisal Memo (CAM) generator. Generate a structured, professional credit report.
 
 Company: ${JSON.stringify(ws?.company || {}, null, 2)}
 Loan Details: ${JSON.stringify(ws?.loan || {}, null, 2)}
@@ -65,32 +63,32 @@ Respond ONLY in this JSON format:
   },
   "executiveSummary": "2-3 sentence summary"
 }`,
-                        },
-                    ],
-                },
-            ],
-        });
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 2048,
+    });
 
-        const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        let report: any = { raw: text };
+    const text = response.choices[0]?.message?.content || "";
+    let report: any = { raw: text };
 
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            try { report = JSON.parse(jsonMatch[0]); }
-            catch { report = { raw: text }; }
-        }
-
-        if (workspaceId) {
-            await Workspace.findOneAndUpdate(
-                { id: workspaceId },
-                { $set: { report } }
-            );
-        }
-
-        res.json({ success: true, report });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try { report = JSON.parse(jsonMatch[0]); }
+      catch { report = { raw: text }; }
     }
+
+    if (workspaceId) {
+      await Workspace.findOneAndUpdate(
+        { id: workspaceId },
+        { $set: { report } }
+      );
+    }
+
+    res.json({ success: true, report });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;
