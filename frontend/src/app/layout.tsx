@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { TopBar } from "@/components/Layout/TopBar";
+import { BackgroundEffects } from "@/components/Layout/BackgroundEffects";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#030712] text-gray-100 min-h-screen selection:bg-brand/30`}
       >
+        <BackgroundEffects />
         <Sidebar>
           <div className="flex flex-col min-h-screen">
              <TopBar />
