@@ -1,89 +1,91 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { callGroqJSON, GROQ_MODEL_VERSATILE } from "../groq.js";
 import { Workspace } from "../models/Workspace.js";
+import { authenticate, AuthRequest } from "../middleware/auth.js";
+import { auditLog } from "../middleware/audit.js";
 
 const router = Router();
 
-router.post("/classify", async (req: Request, res: Response) => {
-    try {
-        const { workspaceId, documents } = req.body;
+router.post(
+    "/classify",
+    authenticate,
+    auditLog("classify_documents", "document"),
+    async (req: AuthRequest, res: Response) => {
+        try {
+            const { workspaceId, documents } = req.body;
 
-        if (!documents || !Array.isArray(documents)) {
-            res.status(400).json({ error: "documents array is required" });
-            return;
-        }
+            if (!workspaceId) {
+                res.status(400).json({ error: "workspaceId is required" });
+                return;
+            }
 
-        const results = [];
+            if (!documents || !Array.isArray(documents)) {
+                res.status(400).json({ error: "documents array is required" });
+                return;
+            }
 
-        for (const doc of documents) {
-            let structuredData = null;
-            try {
-                const prompt = `You are a financial data extraction AI. Document classified as "${doc.classification}". Extract structured financial data.
+            const workspace = await Workspace.findOne({ id: workspaceId });
+            if (!workspace) {
+                res.status(404).json({ error: "Workspace not found" });
+                return;
+            }
+
+            const classifications = [];
+
+            for (const doc of documents) {
+                let structuredData = null;
+                try {
+                    const prompt = `You are a financial data extraction AI. Document classified as "${doc.classification}". Extract structured financial data.
 
 DOCUMENT TEXT:
 ${(doc.extractedText || "").substring(0, 8000)}
 
 Respond ONLY in this JSON format:
 {
-  "revenue": null, "netProfit": null, "totalDebt": null,
-  "totalAssets": null, "totalLiabilities": null, "cashFlow": null,
-  "ebitda": null, "ebitdaMargin": null, "debtToEquity": null,
-  "currentRatio": null, "promoterShareholding": null,
-  "publicShareholding": null, "workingCapital": null,
+  "revenue": null, "netIncome": null, "totalAssets": null,
+  "totalLiabilities": null, "equity": null, "cashFlow": null,
+  "debtToEquityRatio": null, "currentRatio": null,
   "interestCoverageRatio": null, "netProfitMargin": null,
   "returnOnEquity": null, "operatingProfit": null,
   "borrowings": null, "otherKeyMetrics": {}
 }`;
 
-                structuredData = await callGroqJSON(GROQ_MODEL_VERSATILE, prompt);
-            } catch (err: any) {
-                structuredData = { error: err.message };
-            }
+                    structuredData = await callGroqJSON(GROQ_MODEL_VERSATILE, prompt);
+                } catch (err: any) {
+                    structuredData = { error: err.message };
+                }
 
-            results.push({
-                documentId: doc.id,
-                classification: doc.classification,
-                analystVerified: true,
-                structuredData,
-            });
-        }
+                classifications.push({
+                    documentId: doc.id,
+                    classification: doc.classification,
+                    analystVerified: doc.analystVerified || false,
+                    structuredData,
+                    processedAt: new Date().toISOString(),
+                });
 
-        // Merge structured data and persist to MongoDB
-        if (workspaceId) {
-            const merged: Record<string, any> = {};
-            for (const r of results) {
-                if (r.structuredData && typeof r.structuredData === "object") {
-                    for (const [key, val] of Object.entries(r.structuredData)) {
-                        if (val !== null && val !== undefined && key !== "error" && key !== "raw") {
-                            merged[key] = val;
-                        }
-                    }
+                // Update document in workspace
+                const docIndex = workspace.documents.findIndex((d: any) => d.id === doc.id);
+                if (docIndex !== -1) {
+                    workspace.documents[docIndex].classification = doc.classification;
+                    workspace.documents[docIndex].analystVerified = doc.analystVerified || false;
                 }
             }
 
-            // Update classification on individual document records too
-            for (const doc of documents) {
-                await Workspace.findOneAndUpdate(
-                    { id: workspaceId, "documents.id": doc.id },
-                    {
-                        $set: {
-                            "documents.$.classification": doc.classification,
-                            "documents.$.analystVerified": true,
-                        },
-                    }
-                );
-            }
+            // Save classifications to workspace
+            workspace.classifications = classifications;
+            workspace.updatedAt = new Date();
+            await workspace.save();
 
-            await Workspace.findOneAndUpdate(
-                { id: workspaceId },
-                { $set: { classifications: results, extractedData: merged } }
-            );
+            res.json({
+                success: true,
+                message: "Classifications saved successfully",
+                classifications,
+            });
+        } catch (error: any) {
+            console.error("Classification error:", error);
+            res.status(500).json({ error: error.message });
         }
-
-        res.json({ success: true, classifications: results });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
     }
-});
+);
 
 export default router;
